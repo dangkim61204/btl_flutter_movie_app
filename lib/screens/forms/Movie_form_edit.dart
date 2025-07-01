@@ -1,23 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:movie_flutter/models/movie.dart';
 
-class MovieFormScreen extends StatefulWidget {
+
+
+class MovieEditFormScreen extends StatefulWidget {
+  final Movie movie;
+
+  const MovieEditFormScreen({Key? key, required this.movie}) : super(key: key);
+
   @override
-  _MovieFormScreenState createState() => _MovieFormScreenState();
+  _MovieEditFormScreenState createState() => _MovieEditFormScreenState();
 }
 
-class _MovieFormScreenState extends State<MovieFormScreen> {
+class _MovieEditFormScreenState extends State<MovieEditFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _episodesController = TextEditingController();
-  final TextEditingController _durationController = TextEditingController();
-  final TextEditingController _releaseYearController = TextEditingController();
-  final TextEditingController _contentController = TextEditingController();
+  late TextEditingController _titleController;
+  late TextEditingController _episodesController;
+  late TextEditingController _durationController;
+  late TextEditingController _releaseYearController;
+  late TextEditingController _contentController;
 
-  String status = 'hoàn thành';
-  String language = 'Vietsub';
+  late String status;
+  late String language;
 
-  // Dữ liệu giả định cho dropdown
+  // Dữ liệu mẫu giả định (sau sẽ thay bằng API)
   final List<String> countries = ['Việt Nam', 'Hàn Quốc', 'Mỹ'];
   final List<String> genres = ['Hành động', 'Tình cảm', 'Kinh dị'];
   final List<String> actors = ['Trấn Thành', 'Ngô Thanh Vân', 'Chi Pu'];
@@ -27,9 +34,29 @@ class _MovieFormScreenState extends State<MovieFormScreen> {
   List<String> selectedActors = [];
 
   @override
+  void initState() {
+    super.initState();
+
+    final movie = widget.movie;
+
+    _titleController = TextEditingController(text: movie.title);
+    _episodesController = TextEditingController(text: movie.episodes.toString());
+    _durationController = TextEditingController(text: movie.duration);
+    _releaseYearController = TextEditingController(text: movie.releaseYear.toString());
+    _contentController = TextEditingController(text: movie.content ?? '');
+
+    status = movie.status;
+    language = movie.language;
+    selectedCountry = movie.country.name;
+
+    selectedGenres = movie.genres.map((g) => g.name).toList();
+    selectedActors = movie.actors.map((a) => a.name).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Thêm phim mới")),
+      appBar: AppBar(title: Text("Sửa phim")),
       body: Padding(
         padding: EdgeInsets.all(16),
         child: SingleChildScrollView(
@@ -86,7 +113,6 @@ class _MovieFormScreenState extends State<MovieFormScreen> {
                       .toList(),
                   onChanged: (value) => setState(() => language = value!),
                 ),
-                // Genres (Checkbox)
                 SizedBox(height: 12),
                 Align(
                   alignment: Alignment.centerLeft,
@@ -137,15 +163,17 @@ class _MovieFormScreenState extends State<MovieFormScreen> {
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
+                      print("✅ Cập nhật phim:");
                       print("🎬 Tiêu đề: ${_titleController.text}");
                       print("📦 Thể loại: $selectedGenres");
                       print("🎭 Diễn viên: $selectedActors");
                       print("🌍 Quốc gia: $selectedCountry");
                       print("📜 Nội dung: ${_contentController.text}");
-                      // Tiếp theo: gửi API thêm phim
+
+                      // Gọi API cập nhật ở đây nếu muốn
                     }
                   },
-                  child: Text("Thêm phim"),
+                  child: Text("Cập nhật phim"),
                 ),
               ],
             ),

@@ -1,7 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:movie_flutter/screens/forms/Movie_form.dart';
+import 'package:movie_flutter/screens/forms/Movie_form_edit.dart';
 import '../models/movie.dart';
 import '../services/movie_service.dart';
+import 'movie_detail_screen.dart';
 
 class MovieScreen extends StatefulWidget {
   @override
@@ -41,7 +44,7 @@ class _MovieScreenState extends State<MovieScreen> {
                     .showSnackBar(SnackBar(content: Text('Lỗi: $e')));
               }
             },
-            child: Text('Xoá'),
+            child: Text('Xoá', style: TextStyle(color: Colors.red)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -55,15 +58,17 @@ class _MovieScreenState extends State<MovieScreen> {
   Widget _buildMovieCard(Movie movie) {
     return GestureDetector(
       onTap: () {
-        // Có thể chuyển sang màn sửa nếu cần
-        // Navigator.push(...);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => MovieDetailScreen(movie: movie)),
+        );
       },
       child: Card(
         elevation: 3,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Ảnh bọc bằng Container với BoxDecoration
+            // Ảnh
             Container(
               height: 180,
               width: double.infinity,
@@ -72,50 +77,62 @@ class _MovieScreenState extends State<MovieScreen> {
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.vertical(top: Radius.circular(6)),
               ),
-              child: movie.imageUrl != null && movie.imageUrl!.isNotEmpty
-                  ?CachedNetworkImage(
+              child: CachedNetworkImage(
                 imageUrl: 'http://10.0.2.2:8000/${movie.imageUrl}',
                 fit: BoxFit.cover,
-                placeholder: (context, url) =>
+                placeholder: (_, __) =>
                     Center(child: CircularProgressIndicator()),
-                errorWidget: (context, url, error) {
-                  debugPrint("❌ Ảnh lỗi: $url - lỗi: $error");
+                errorWidget: (_, url, error) {
+                  print("❌ Ảnh lỗi: $url - $error");
                   return Icon(Icons.broken_image, size: 60);
                 },
-              )
-                  : Center(child: Icon(Icons.movie, size: 60)),
+              ),
             ),
 
-
-            // Tiêu đề và quốc gia
+            // Tiêu đề & quốc gia
             Padding(
               padding: const EdgeInsets.all(6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    movie.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 2),
+                  Text(movie.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   Text(
                     'QG: ${movie.country.name}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
                 ],
               ),
             ),
 
-            // Nút xoá
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: Icon(Icons.delete, color: Colors.redAccent),
-                onPressed: () => _confirmDelete(movie),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MovieEditFormScreen(movie: movie),
+                        ),
+                      ).then((updated) {
+                        if (updated == true) setState(_loadMovies);
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _confirmDelete(movie),
+                  ),
+                ],
               ),
-            )
+            ),
+
           ],
         ),
       ),
@@ -125,41 +142,42 @@ class _MovieScreenState extends State<MovieScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Danh sách phim')),
+      appBar: AppBar(title: Text('🎬 Danh sách phim')),
       body: FutureBuilder<List<Movie>>(
         future: _futureMovies,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting)
             return Center(child: CircularProgressIndicator());
 
-          if (snapshot.hasError) {
-            print("❌ Lỗi FutureBuilder: ${snapshot.error}");
-            return Center(child: Text('Lỗi: ${snapshot.error}'));
-          }
+          if (snapshot.hasError)
+            return Center(child: Text("Lỗi: ${snapshot.error}"));
 
           if (!snapshot.hasData || snapshot.data!.isEmpty)
-            return Center(child: Text('Không có phim nào'));
+            return Center(child: Text('Không có phim'));
 
           final movies = snapshot.data!;
           return GridView.builder(
             padding: EdgeInsets.all(10),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, // 2 cột
-              childAspectRatio: 0.65, // tỉ lệ ảnh/card
+              crossAxisCount: 2,
+              childAspectRatio: 0.65,
               crossAxisSpacing: 10,
               mainAxisSpacing: 10,
             ),
             itemCount: movies.length,
-            itemBuilder: (_, index) => _buildMovieCard(movies[index]),
+            itemBuilder: (_, i) => _buildMovieCard(movies[i]),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final updated = await Navigator.pushNamed(context, '/movie/form');
-          if (updated == true) setState(_loadMovies);
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => MovieFormScreen()),
+          );
         },
         child: Icon(Icons.add),
+
       ),
     );
   }
