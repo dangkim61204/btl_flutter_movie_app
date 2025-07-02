@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:movie_flutter/models/common.dart';
 import 'package:movie_flutter/screens/forms/Movie_form.dart';
 import 'package:movie_flutter/screens/forms/Movie_form_edit.dart';
 import '../models/movie.dart';
@@ -78,7 +79,7 @@ class _MovieScreenState extends State<MovieScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(6)),
               ),
               child: CachedNetworkImage(
-                imageUrl: 'http://10.0.2.2:8000/${movie.imageUrl}',
+                imageUrl: '${Common.domain}/${movie.imageUrl}',
                 fit: BoxFit.cover,
                 placeholder: (_, __) =>
                     Center(child: CircularProgressIndicator()),
@@ -121,7 +122,10 @@ class _MovieScreenState extends State<MovieScreen> {
                           builder: (_) => MovieEditFormScreen(movie: movie),
                         ),
                       ).then((updated) {
-                        if (updated == true) setState(_loadMovies);
+                        if (updated == true) {
+                          setState(() {}); // chỉ cần setState nếu _loadMovies đã được gọi trong initState hoặc build
+                          _loadMovies(); // hoặc gọi lại hàm fetch danh sách
+                        }
                       });
                     },
                   ),

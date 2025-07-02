@@ -5,7 +5,7 @@ import '../models/genre.dart';
 
 
 class GenreService {
-  final String baseUrl = "${Common.domain}/genres";
+  final String baseUrl = "${Common.domain}/api/genres";
 
   Future<List<Genre>> getGenres() async {
     print(" Đang gọi API: $baseUrl");

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:movie_flutter/models/common.dart';
 import '../models/movie.dart';
 
 class MovieDetailScreen extends StatelessWidget {
@@ -24,7 +25,7 @@ class MovieDetailScreen extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: CachedNetworkImage(
-                    imageUrl: 'http://10.0.2.2:8000/${movie.imageUrl}',
+                    imageUrl: '${Common.domain}/${movie.imageUrl}',
                     width: 140,
                     height: 200,
                     fit: BoxFit.cover,

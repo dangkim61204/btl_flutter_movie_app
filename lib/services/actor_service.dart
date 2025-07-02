@@ -4,7 +4,7 @@ import 'package:movie_flutter/models/actor.dart';
 import 'package:movie_flutter/models/common.dart';
 import 'package:http/http.dart' as http;
 class ActorService {
-  final String baseUrl = "${Common.domain}/actors";
+  final String baseUrl = "${Common.domain}/api/actors";
 
   Future<List<Actor>> getActors() async {
     print("📡 Đang gọi API: $baseUrl");

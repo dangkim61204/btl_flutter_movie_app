@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:movie_flutter/models/country.dart';
 
 class CountryService {
-  final String baseUrl = "${Common.domain}/countries";
+  final String baseUrl = "${Common.domain}/api/countries";
 
   Future<List<Country>> getCountries() async {
     print("📡 Đang gọi API: $baseUrl");
