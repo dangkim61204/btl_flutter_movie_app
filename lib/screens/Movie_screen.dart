@@ -23,7 +23,9 @@ class _MovieScreenState extends State<MovieScreen> {
   }
 
   void _loadMovies() {
-    _futureMovies = _movieService.getMovies();
+    setState(() {
+      _futureMovies = _movieService.getMovies();
+    });
   }
 
   void _confirmDelete(Movie movie) {
@@ -84,7 +86,7 @@ class _MovieScreenState extends State<MovieScreen> {
                 placeholder: (_, __) =>
                     Center(child: CircularProgressIndicator()),
                 errorWidget: (_, url, error) {
-                  print("❌ Ảnh lỗi: $url - $error");
+                  print(" Ảnh lỗi: $url - $error");
                   return Icon(Icons.broken_image, size: 60);
                 },
               ),
@@ -123,8 +125,7 @@ class _MovieScreenState extends State<MovieScreen> {
                         ),
                       ).then((updated) {
                         if (updated == true) {
-                          setState(() {}); // chỉ cần setState nếu _loadMovies đã được gọi trong initState hoặc build
-                          _loadMovies(); // hoặc gọi lại hàm fetch danh sách
+                          _loadMovies(); // Gọi hàm đã sửa có setState
                         }
                       });
                     },
@@ -174,13 +175,16 @@ class _MovieScreenState extends State<MovieScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => MovieFormScreen()),
-          );
-        },
-        child: Icon(Icons.add),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => MovieFormScreen()),
+            ).then((result) {
+              if (result == true) {
+                _loadMovies(); // Gọi lại hàm load danh sách
+              }
+            });
+          }
 
       ),
     );

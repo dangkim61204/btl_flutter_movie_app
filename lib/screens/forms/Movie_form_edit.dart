@@ -1,7 +1,8 @@
 import 'dart:io';
-
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:movie_flutter/models/common.dart';
 import 'package:movie_flutter/models/movie.dart';
 import 'package:movie_flutter/requests/MovieRequest.dart';
 
@@ -42,11 +43,13 @@ class _MovieEditFormScreenState extends State<MovieEditFormScreen> {
 
   File? _pickedImage;
   String? _oldImage;
+  int _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
 
   @override
   void initState() {
     super.initState();
     final movie = widget.movie;
+
     _titleController.text = movie.title;
     _episodesController.text = movie.episodes.toString();
     _durationController.text = movie.duration;
@@ -58,6 +61,7 @@ class _MovieEditFormScreenState extends State<MovieEditFormScreen> {
     _selectedGenreIds = movie.genres.map((g) => g.id).toList();
     _selectedActorIds = movie.actors.map((a) => a.id).toList();
     _oldImage = movie.imageUrl;
+
     loadData();
   }
 
@@ -80,6 +84,7 @@ class _MovieEditFormScreenState extends State<MovieEditFormScreen> {
     if (picked != null) {
       setState(() {
         _pickedImage = File(picked.path);
+        _imageTimestamp = DateTime.now().millisecondsSinceEpoch;
       });
     }
   }
@@ -103,12 +108,20 @@ class _MovieEditFormScreenState extends State<MovieEditFormScreen> {
     );
 
     try {
-      await MovieService().saveMovie(
+      // Gửi API và nhận lại đường dẫn ảnh mới (nếu có)
+      final newImage = await MovieService().saveMovie(
         movie,
         'PUT',
         hasFile: _pickedImage != null,
         filePath: _pickedImage?.path,
       );
+
+      if (newImage != null) {
+        setState(() {
+          _oldImage = newImage;
+          _pickedImage = null;
+        });
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Cập nhật phim thành công")));
       Navigator.pop(context, true);
@@ -116,6 +129,7 @@ class _MovieEditFormScreenState extends State<MovieEditFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -129,28 +143,37 @@ class _MovieEditFormScreenState extends State<MovieEditFormScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              GestureDetector(
-                onTap: _pickImage,
+              Text("Ảnh hiện tại", style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
                 child: _pickedImage != null
-                    ? Image.file(_pickedImage!, height: 200, fit: BoxFit.cover)
-                    : _oldImage != null
-                    ? Image.network(
-                  'http://10.0.2.2:8000/storage/$_oldImage',
-                  height: 200,
+                    ? Image.file(_pickedImage!, fit: BoxFit.cover)
+                    : (_oldImage != null
+                    ? CachedNetworkImage(
+                  imageUrl: '${Common.domain}/$_oldImage?t=$_imageTimestamp',
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Icon(Icons.broken_image),
+                  placeholder: (_, __) =>
+                      Center(child: CircularProgressIndicator()),
+                  errorWidget: (_, __, ___) =>
+                      Center(child: Icon(Icons.broken_image)),
                 )
-                    : Container(
-                  height: 200,
-                  color: Colors.grey[300],
-                  child: Center(child: Text("Chọn ảnh")),
-                ),
+                    : Center(child: Text("Chưa có ảnh"))),
+              ),
+              SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _pickImage,
+                icon: Icon(Icons.image),
+                label: Text("Thay ảnh"),
               ),
               SizedBox(height: 16),
               TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(labelText: 'Tên phim'),
-                validator: (value) => value!.isEmpty ? 'Nhập tên phim' : null,
+                validator: (value) =>
+                value!.isEmpty ? 'Nhập tên phim' : null,
               ),
               TextFormField(
                 controller: _episodesController,
@@ -190,7 +213,8 @@ class _MovieEditFormScreenState extends State<MovieEditFormScreen> {
                 value: _selectedCountryId,
                 decoration: InputDecoration(labelText: 'Quốc gia'),
                 items: _countries
-                    .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                    .map((c) =>
+                    DropdownMenuItem(value: c.id, child: Text(c.name)))
                     .toList(),
                 onChanged: (val) => setState(() => _selectedCountryId = val),
               ),
@@ -202,8 +226,10 @@ class _MovieEditFormScreenState extends State<MovieEditFormScreen> {
                   title: Text(g.name),
                   onChanged: (v) {
                     setState(() {
-                      if (v!) _selectedGenreIds.add(g.id);
-                      else _selectedGenreIds.remove(g.id);
+                      if (v!)
+                        _selectedGenreIds.add(g.id);
+                      else
+                        _selectedGenreIds.remove(g.id);
                     });
                   },
                 );
@@ -216,8 +242,10 @@ class _MovieEditFormScreenState extends State<MovieEditFormScreen> {
                   title: Text(a.name),
                   onChanged: (v) {
                     setState(() {
-                      if (v!) _selectedActorIds.add(a.id);
-                      else _selectedActorIds.remove(a.id);
+                      if (v!)
+                        _selectedActorIds.add(a.id);
+                      else
+                        _selectedActorIds.remove(a.id);
                     });
                   },
                 );

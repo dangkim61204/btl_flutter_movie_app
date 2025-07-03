@@ -35,30 +35,32 @@ class MovieService {
   }
 
   //ham them moi
-  Future<void> saveMovie(MovieRequest movie, String method, {bool hasFile = false, String? filePath}) async {
+  Future<String?> saveMovie(MovieRequest movie, String method, {bool hasFile = false, String? filePath}) async {
     final url = method == 'POST'
         ? Uri.parse('${Common.domain}/api/movies')
         : Uri.parse('${Common.domain}/api/movies/${movie.id}');
 
-    final request = http.MultipartRequest(method, url);
+    final request = http.MultipartRequest('POST', url);
 
     request.headers.addAll({
-      'Accept': 'application/json', // ❗ RẤT QUAN TRỌNG
+      'Accept': 'application/json',
     });
-    // Thêm ảnh (hoặc ảnh rỗng nếu không có)
+
     if (hasFile && filePath != null) {
       request.files.add(await http.MultipartFile.fromPath('image', filePath));
     } else {
       request.files.add(http.MultipartFile.fromBytes('image', [], filename: ''));
     }
 
-    // Chuyển map toJson về dạng Map<String, String>
+    if (method == 'PUT') {
+      request.fields['_method'] = 'PUT';
+    }
+
     final fields = <String, String>{};
     movie.toJson().forEach((key, value) {
       if (value is List) {
-        // Mảng: Gửi từng phần tử riêng biệt kiểu: genre_ids[]=1, genre_ids[]=2
         for (var v in value) {
-          fields.putIfAbsent('$key[]', () => v.toString()); // Laravel hiểu được
+          fields.putIfAbsent('$key[]', () => v.toString());
         }
       } else {
         fields[key] = value.toString();
@@ -67,25 +69,18 @@ class MovieService {
     request.fields.addAll(fields);
 
     final response = await request.send();
+    final respStr = await response.stream.bytesToString();
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final respStr = await response.stream.bytesToString();
       throw Exception('Lỗi lưu phim: ${response.statusCode} - $respStr');
     }
+
+    final jsonResp = jsonDecode(respStr);
+    return jsonResp['imageUrl']; // ✅ lấy đường dẫn ảnh từ response
   }
 
-  //
-  // //update
-  // Future<void> updateMovie(int id, MovieRequest movie) async {
-  //   final url = Uri.parse('$baseUrl/$id');
-  //   final headers = {"Content-Type": "application/json"};
-  //   final body = jsonEncode(movie.toJson());
-  //
-  //   final res = await http.put(url, headers: headers, body: body);
-  //   if (res.statusCode != 200) {
-  //     throw Exception('Không thể cập nhật phim: ${res.body}');
-  //   }
-  // }
+
+
 
 
 //delete
